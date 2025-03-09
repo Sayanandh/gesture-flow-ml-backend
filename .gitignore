@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+
+# Flask
+instance/
+.webassets-cache
+
+# Uploaded files
+app/uploads/*
+!app/uploads/.gitkeep
+
+# ML models - exclude large model files
+app/models/*.h5
+app/models/*.pb
+app/models/*.tflite
+app/models/*.pt
+app/models/*.onnx
+app/models/*.bin
+app/models/*.pkl
+!app/models/.gitkeep
+
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db 
