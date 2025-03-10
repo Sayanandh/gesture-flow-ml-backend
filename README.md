@@ -24,6 +24,8 @@ This is the backend service for the Gesture Flow application, which provides sig
    pip install -r requirements.txt
    ```
 
+> **Note on Dependencies**: The requirements.txt file specifies numpy==1.24.3 to ensure compatibility between tensorflow-cpu and scikit-learn. If you update any ML libraries, make sure to check for potential version conflicts.
+
 ### Running Locally
 
 1. Make sure your virtual environment is activated
@@ -93,7 +95,7 @@ This is the backend service for the Gesture Flow application, which provides sig
 ### Step 4: Configure the Web Service
 1. Give your service a name (e.g., "gesture-flow-ml-backend")
 2. Set the Environment to "Python 3"
-3. Set the Build Command to: `pip install -r requirements.txt`
+3. Set the Build Command to: `./build.sh`
 4. Set the Start Command to: `gunicorn run:app`
 5. Select an appropriate plan (Free tier is fine for starting)
 6. Under "Advanced" settings, add the following environment variables:
@@ -105,6 +107,15 @@ This is the backend service for the Gesture Flow application, which provides sig
 1. Click "Create Web Service"
 2. Wait for the deployment to complete (this may take a few minutes)
 3. Once deployed, Render will provide you with a URL for your service (e.g., `https://gesture-flow-ml-backend.onrender.com`)
+
+### Troubleshooting Deployment Issues
+
+If you encounter dependency conflicts during deployment:
+
+1. **Check numpy version**: Make sure numpy version is compatible with both TensorFlow and scikit-learn
+2. **Simplify dependencies**: If you're not using all ML libraries, remove unnecessary ones
+3. **Check logs**: In the Render dashboard, check the build logs for specific errors
+4. **Use a custom build script**: The provided `build.sh` script helps handle dependency installation
 
 ### Step 6: Update Your Flutter App
 1. Update the backend URL in your Flutter app to point to your Render.com service URL

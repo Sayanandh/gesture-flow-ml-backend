@@ -10,6 +10,15 @@ logging.basicConfig(level=logging.INFO,
                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Try to import TensorFlow, but don't fail if it's not available
+try:
+    import tensorflow as tf
+    TENSORFLOW_AVAILABLE = True
+    logger.info("TensorFlow is available (version: %s)", tf.__version__)
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+    logger.warning("TensorFlow is not available, using mock implementation")
+
 # Path to ML models
 MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
 
@@ -51,6 +60,12 @@ def load_ml_model():
     In a real implementation, this would load TensorFlow or PyTorch models.
     """
     global ml_model, is_model_loaded
+    
+    # If TensorFlow is not available, don't try to load the model
+    if not TENSORFLOW_AVAILABLE:
+        logger.warning("TensorFlow is not available, skipping model loading")
+        is_model_loaded = False
+        return
     
     try:
         # Check if model files exist
