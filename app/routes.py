@@ -152,48 +152,4 @@ def interpret_live():
         return jsonify(result)
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@main_bp.route('/api/upload_model', methods=['POST'])
-def upload_model():
-    """
-    Endpoint to upload a model file.
-    
-    Expects a multipart/form-data with:
-    - model: The model file
-    - api_key: A secret key for authentication
-    """
-    # Check for API key (simple authentication)
-    api_key = request.form.get('api_key')
-    expected_key = os.environ.get('UPLOAD_API_KEY', 'your-secret-key-here')
-    
-    if not api_key or api_key != expected_key:
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    if 'model' not in request.files:
-        return jsonify({'error': 'No model file provided'}), 400
-    
-    try:
-        model_file = request.files['model']
-        
-        # Check if the file is allowed
-        if not model_file.filename.endswith(('.h5', '.tflite', '.pb')):
-            return jsonify({'error': 'Invalid model file format'}), 400
-        
-        # Save the model file
-        model_path = os.path.join('app/models', 'sign_language_model.h5')
-        model_file.save(model_path)
-        
-        # Reload the model
-        from app.sign_interpreter import load_ml_model
-        load_ml_model()
-        
-        return jsonify({
-            'status': 'success',
-            'message': 'Model uploaded successfully',
-            'filename': model_file.filename
-        })
-    
-    except Exception as e:
-        logger.error(f"Error uploading model: {e}")
         return jsonify({'error': str(e)}), 500 
