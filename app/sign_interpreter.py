@@ -18,9 +18,19 @@ try:
 except ImportError:
     TENSORFLOW_AVAILABLE = False
     logger.warning("TensorFlow is not available, using mock implementation")
+    logger.warning("To use the actual model, please install TensorFlow: pip install tensorflow")
 
 # Path to ML models
 MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
+MODEL_FILE = 'tensorflow_model.h5'  # Updated to match your specific model file
+
+# Check if model exists at startup
+model_path = os.path.join(MODEL_DIR, MODEL_FILE)
+if os.path.exists(model_path):
+    logger.info(f"Model file found: {MODEL_FILE}")
+else:
+    logger.warning(f"Model file not found at {model_path}")
+    logger.warning("Using mock implementation for sign language interpretation")
 
 # Mock gestures for demonstration
 MOCK_GESTURES = [
@@ -57,32 +67,42 @@ is_model_loaded = False
 def load_ml_model():
     """
     Load the ML model for sign language interpretation.
-    In a real implementation, this would load TensorFlow or PyTorch models.
     """
     global ml_model, is_model_loaded
     
     # If TensorFlow is not available, don't try to load the model
     if not TENSORFLOW_AVAILABLE:
         logger.warning("TensorFlow is not available, skipping model loading")
+        logger.warning("Using mock implementation for sign language interpretation")
         is_model_loaded = False
-        return
+        return False
     
     try:
         # Check if model files exist
-        model_path = os.path.join(MODEL_DIR, 'sign_language_model.h5')
+        model_path = os.path.join(MODEL_DIR, MODEL_FILE)
         if os.path.exists(model_path):
             logger.info(f"Loading ML model from {model_path}")
-            # In a real implementation, this would use TensorFlow or PyTorch
-            # ml_model = tf.keras.models.load_model(model_path)
-            # For now, we'll just set a flag
-            is_model_loaded = True
-            logger.info("ML model loaded successfully")
+            
+            try:
+                # Load the actual model file
+                ml_model = tf.keras.models.load_model(model_path)
+                logger.info(f"Model loaded successfully: {MODEL_FILE}")
+                logger.info(f"Model summary: {ml_model.summary()}")
+                is_model_loaded = True
+            except Exception as e:
+                logger.error(f"Error loading model file: {e}")
+                logger.warning("Falling back to mock implementation")
+                is_model_loaded = False
         else:
-            logger.warning(f"ML model not found at {model_path}, using mock implementation")
+            logger.warning(f"ML model not found at {model_path}")
+            logger.warning("Using mock implementation for sign language interpretation")
             is_model_loaded = False
     except Exception as e:
-        logger.error(f"Error loading ML model: {e}")
+        logger.error(f"Error in model loading process: {e}")
+        logger.warning("Falling back to mock implementation")
         is_model_loaded = False
+    
+    return is_model_loaded
 
 # Try to load the model at module import time
 load_ml_model()
@@ -104,15 +124,8 @@ def interpret_sign_language(image, source='camera'):
     # Log the request
     logger.info(f"Processing sign language interpretation request from source: {source}")
     
-    # Simulate processing time
-    time.sleep(0.5)
-    
-    # Generate a unique filename for the image
+    # Generate a unique timestamp for the request
     timestamp = int(time.time() * 1000)
-    filename = f"sign_capture_{timestamp}.jpg"
-    
-    # In a real implementation, you might save the image for later analysis
-    # image.save(os.path.join('uploads', filename))
     
     if is_model_loaded and ml_model is not None:
         # Use the ML model for interpretation
@@ -120,40 +133,48 @@ def interpret_sign_language(image, source='camera'):
             # Preprocess the image
             processed_image = preprocess_image(image)
             
-            # Make prediction
-            # In a real implementation, this would use the loaded model
-            # prediction = ml_model.predict(np.expand_dims(processed_image, axis=0))
-            # For now, we'll use the mock implementation
+            # Make prediction using the loaded model
+            prediction = ml_model.predict(np.expand_dims(processed_image, axis=0))
             
-            # Mock detection - in a real implementation, this would use ML
-            # Select random gestures (1-3)
-            num_gestures = random.randint(1, 3)
-            detected_gestures = random.sample(MOCK_GESTURES, num_gestures)
+            # Process the prediction results
+            # This will depend on your specific model's output format
+            # For demonstration, we'll assume the model outputs class probabilities
             
-            # Select a random phrase
-            interpretation_text = random.choice(MOCK_PHRASES)
+            # Get the top predicted class
+            predicted_class = np.argmax(prediction[0])
+            confidence = float(prediction[0][predicted_class])
             
-            # Generate a confidence score
-            confidence = random.uniform(0.75, 0.98)
+            # Map the class index to a label (this should be customized for your model)
+            # For demonstration, we'll use mock gestures
+            gesture_labels = [gesture["label"] for gesture in MOCK_GESTURES]
+            interpretation_text = f"Detected: {gesture_labels[predicted_class % len(gesture_labels)]}"
             
-            logger.info(f"ML interpretation complete: {interpretation_text}")
+            # Create a detected gesture object
+            detected_gesture = {
+                "label": gesture_labels[predicted_class % len(gesture_labels)],
+                "confidence": confidence
+            }
+            
+            logger.info(f"ML interpretation complete: {interpretation_text} (confidence: {confidence:.2f})")
+            
+            # Return the results
+            return {
+                'text': interpretation_text,
+                'confidence': confidence,
+                'source': source,
+                'detectedGestures': [detected_gesture],
+                'timestamp': timestamp,
+                'is_mock': False
+            }
+            
         except Exception as e:
             logger.error(f"Error using ML model: {e}")
             # Fall back to mock implementation
             return _mock_interpretation(timestamp)
     else:
         # Use mock implementation
-        logger.info("Using mock implementation")
+        logger.info("Using mock implementation (model not loaded)")
         return _mock_interpretation(timestamp)
-    
-    # Return the results
-    return {
-        'text': interpretation_text,
-        'confidence': confidence,
-        'source': source,
-        'detectedGestures': detected_gestures,
-        'timestamp': timestamp
-    }
 
 def _mock_interpretation(timestamp):
     """
@@ -188,14 +209,19 @@ def preprocess_image(image):
     Returns:
         numpy.ndarray: Preprocessed image
     """
-    # Resize to a standard size
+    # Resize to the input size expected by the model (224x224 is common)
     image = image.resize((224, 224))
     
     # Convert to RGB if not already
     if image.mode != 'RGB':
         image = image.convert('RGB')
     
-    # Convert to numpy array and normalize
+    # Convert to numpy array and normalize to [0,1]
     img_array = np.array(image) / 255.0
+    
+    # If your model expects a different normalization, adjust here
+    # For example, if your model was trained with TensorFlow's preprocess_input:
+    # from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+    # img_array = preprocess_input(np.array(image))
     
     return img_array 

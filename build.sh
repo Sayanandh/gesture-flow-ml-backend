@@ -11,4 +11,7 @@ echo "Creating necessary directories..."
 mkdir -p app/uploads
 mkdir -p app/models
 
+echo "Downloading ML models..."
+python download_models.py
+
 echo "Build completed successfully!" 

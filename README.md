@@ -123,11 +123,31 @@ If you encounter dependency conflicts during deployment:
 
 ## ML Model Information
 
-The backend currently uses a mock implementation for demonstration purposes. To implement actual ML models:
+The backend currently uses a mock implementation for demonstration purposes. There are several ways to implement actual ML models:
+
+### Option 1: Include Models in the Repository
 
 1. Place your trained models in the `app/models` directory
-2. Update the `sign_interpreter.py` file to use your models
+2. The model file should be named `sign_language_model.h5` (or update MODEL_FILE in sign_interpreter.py)
 3. Redeploy the service
+
+### Option 2: Download Models During Deployment
+
+1. Host your model file on a cloud storage service (Google Drive, AWS S3, etc.)
+2. Set the `MODEL_URL` environment variable in Render.com to point to your model file
+3. The build script will automatically download the model during deployment
+
+### Option 3: Upload Models from the Flutter App
+
+1. Include the model in your Flutter app's assets (`assets/ml_models/sign_language_model.h5`)
+2. Set a secure `UPLOAD_API_KEY` environment variable in Render.com
+3. Use the `extractAndUploadModelFromAssets()` method in the Flutter app to upload the model to the backend
+
+### Supported Model Formats
+
+- TensorFlow: .h5, .pb
+- TensorFlow Lite: .tflite
+- Other formats can be added by updating the code in sign_interpreter.py
 
 ## Future Improvements
 
